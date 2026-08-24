@@ -3,6 +3,7 @@
 @using Shared.Services
 @inject IOrderService OrderService
 @inject IAuthService AuthService
+@inject ICartService CartService
 @inject NavigationManager Nav
 
 <PageTitle>Perfume King -- Checkout</PageTitle>
@@ -109,7 +110,7 @@
 
                     <div class="d-flex justify-content-between mb-2">
                         <span class="text-muted">@SharedResource.SubTotal</span>
-                        <span>@Subtotal.ToString() @SharedResource.CurrencySuffix</span>
+                        <span>@Total.ToString() @SharedResource.CurrencySuffix</span>
                     </div>
                     <div class="d-flex justify-content-between mb-3">
                         <span class="text-muted">@SharedResource.Shipping</span>
@@ -120,7 +121,7 @@
 
                     <div class="d-flex justify-content-between align-items-center mb-4">
                         <span class="fw-bold fs-5">@SharedResource.Total</span>
-                        <span class="fw-bold fs-5 text-dark">@Subtotal.ToString() @SharedResource.CurrencySuffix</span>
+                        <span class="fw-bold fs-5 text-dark">@Total.ToString() @SharedResource.CurrencySuffix</span>
                     </div>
 
                     <button class="btn btn-dark w-100 py-3 fw-bold text-uppercase rounded-3" @onclick="() => PlaceOrder()">
@@ -135,7 +136,7 @@
 @code {
     private List<CartItemDTO> CartItems { get; set; } = new();
     // private UserDTO User { get; set; } = new();
-    private decimal Subtotal => CartItems.Sum(item => item.SubTotal);
+    private decimal Total => CartItems.Sum(item => item.SubTotal);
     private string? ErrorMessage { get; set; }
     private bool UseUserInfo { get; set; }
     private PaymentMethod PaymentMethod { get; set; }
@@ -150,6 +151,15 @@
             Nav.NavigateTo("/login");
             return;
         }
+
+        var cartResult = await CartService.GetCartAsync();
+        if (!cartResult.IsSuccess)
+        {
+            ErrorMessage = cartResult.ErrorMessage;
+            return;
+        }
+
+        CartItems = cartResult.Data?.CartItems ?? [];
     }
 
     private async Task PlaceOrder()
