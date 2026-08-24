@@ -1,0 +1,72 @@
+﻿@using Perfume_King.Shared.DTOs
+@using Perfume_King.Shared.Services
+@inject ICartService CartService
+
+<section class="container my-4 my-md-5">
+    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3 g-md-4">
+        @foreach (var perfume in Perfumes)
+        {
+            <div class="col">
+                <ProductCard Perfume="perfume" 
+                    AddToCart="AddToCart" />
+            </div>
+        }
+    </div>
+</section>
+
+<ContentDialog Title="DialogTitle"
+               @bind-IsVisible="IsDialogVisible"
+               PrimaryButtonText="OK"
+               FullSizeDesired="md">
+    <ContentTemplate>
+        @if (!string.IsNullOrEmpty(DialogContentBody))
+        {
+            <span dir="rtl" class="d-block text-end">
+                @((MarkupString)DialogContentBody)
+            </span>
+        }
+    </ContentTemplate>
+</ContentDialog>
+
+@code {
+    [Parameter] public List<PerfumeDTO> Perfumes { get; set; } = [];
+
+    private string? ErrorMsg { get; set; }
+
+    private bool IsDialogVisible { get; set; }
+
+    private void ShowDialog() => IsDialogVisible = true;
+
+    private void CloseDialog() { }
+
+    private string DialogContentBody { get; set; } = "";
+    private string DialogTitle { get; set; } = "";
+
+    private async Task AddToCart(int id)
+    {
+        if (!UserStateManager.IsLoggedIn)
+        {
+            DialogTitle = SharedResource.LoginDialogTitle;
+            DialogContentBody = SharedResource.LoginDialogBody;
+            ShowDialog();
+            return;
+        }
+
+        var response = await CartService.AddPerfumeToCartAsync(id);
+
+        if (!response.IsSuccess)
+        {
+            ErrorMsg = response.ErrorMessage;
+            DialogTitle = SharedResource.ErrorGeneralTitle;
+            DialogContentBody = ErrorMsg!;
+            ShowDialog();
+            return;
+        }
+
+        DialogTitle = SharedResource.SuccessSaveTitle;
+        DialogContentBody = null!;
+        ShowDialog();
+
+        UserStateManager.CartItemsCount += 1;
+    }
+}

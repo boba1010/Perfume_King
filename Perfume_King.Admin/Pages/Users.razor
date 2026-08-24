@@ -1,0 +1,178 @@
+﻿@page "/users"
+@using Perfume_King.Admin.Components
+@using Shared.DTOs
+@using Shared.Services
+@inject IAuthService AuthService
+@inject IUserService UserService
+@inject NavigationManager Nav
+
+<PageTitle>Perfume King:ADMIN -- Users</PageTitle>
+
+<div class="container-fluid py-5 px-2 px-sm-3 px-md-4">
+
+    <!-- Top Action Header Bar -->
+    <div class="d-flex flex-column flex-sm-row justify-content-between align-items-stretch align-items-sm-center gap-3 mb-4 pb-3 border-bottom border-secondary">
+        <div class="text-center text-sm-start">
+            <h4 class="text-warning fw-bold text-uppercase mb-1 fs-4 fs-md-3">إدارة مستخدمي النظام</h4>
+            <p class="small mb-0">البحث في ملفات العملاء المسجلين، إدارة العناوين، وتتبع الطواقم</p>
+        </div>
+    </div>
+
+    <!-- Reusable Search Filter Component -->
+    <UsersSearchBar @bind-Query="SearchQuery" @bind-SelectedCity="SelectedCityFilter" Cities="@AvailableCities" />
+
+    <!-- Processing Feedback Alerts -->
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger mb-4 border-0 shadow-sm d-flex align-items-center gap-2 p-3 animate__animated animate__fadeIn" role="alert">
+            <i class="bi bi-exclamation-triangle-fill fs-5 flex-shrink-0"></i>
+            <span class="small fw-semibold">@errorMessage</span>
+        </div>
+    }
+
+    <!-- Main Dynamic User Grid Stream -->
+    @if (IsBusy)
+    {
+        <div class="text-center py-5 my-3">
+            <div class="spinner-border text-warning mb-3" role="status" style="width: 3rem; height: 3rem;"></div>
+            <p class="text-white-50 small">جارٍ تحميل سجل المستخدمين...</p>
+        </div>
+    }
+    else if (!FilteredUsers.Any())
+    {
+        <div class="text-center py-5 border border-secondary border-dashed rounded-3 bg-dark bg-opacity-50 mx-1 animate__animated animate__fadeIn">
+            <i class="bi bi-people text-white-50 display-3 d-block mb-3"></i>
+            <h5 class="text-white fw-bold">لم يتم العثور على أي مستخدمين</h5>
+            <p class="text-white-50 small mb-0 px-3">لا يوجد مستخدمون يطابقون معايير البحث الحالية</p>
+        </div>
+    }
+    else
+    {
+        <!-- Fluid Stacking Stream Container -->
+        <div class="d-flex flex-column w-100 gap-3">
+            @foreach (var user in FilteredUsers)
+            {
+                <div class="animate__animated animate__fadeIn">
+                    <UserCard User="@user"
+                              IsUpdating="@updatingEmails.Contains(user.Email)"
+                              OnDelete="() => DeleteUser(user.Email)" />
+                </div>
+            }
+        </div>
+    }
+</div>
+
+<style>
+    /* Styling the placeholder text for high contrast on black background */
+    .custom-placeholder::placeholder {
+        color: rgba(255, 255, 255, 0.4) !important;
+        opacity: 1 !important;
+    }
+
+    /* Active Yellow Focus Borders Override Glow Helper Rules */
+    .input-group:focus-within .input-group-text,
+    .input-group:focus-within .form-control {
+        border-color: #ffc107 !important;
+    }
+
+    .form-select:focus {
+        border-color: #ffc107 !important;
+    }
+
+    /* Mobile Responsive Input Sizing Rules */
+    @@media (max-width: 576px) {
+        .input-group-lg-down .form-control,
+        .input-group-lg-down .input-group-text,
+        .form-select-lg-down {
+            padding-top: 0.6rem !important;
+            padding-bottom: 0.6rem !important;
+            font-size: 0.9rem !important;
+        }
+    }
+</style>
+
+
+@code {
+    private List<UserDTO> usersList = [];
+    private HashSet<string> updatingEmails = new();
+    private List<string> AvailableCities = new();
+    private bool IsBusy { get; set; } = true;
+    private string? errorMessage;
+
+    private string SearchQuery { get; set; } = string.Empty;
+    private string SelectedCityFilter { get; set; } = "All";
+
+    [Inject] private HttpClient Http { get; set; } = default!;
+
+    private IEnumerable<UserDTO> FilteredUsers => usersList
+        .Where(u => (string.IsNullOrWhiteSpace(SearchQuery) ||
+                     u.FullName.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase) ||
+                     u.Email.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase) ||
+                     u.Phone.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase)) &&
+                    (SelectedCityFilter == "All" || u.City == SelectedCityFilter))
+        .OrderBy(u => u.FullName);
+
+    protected override async Task OnInitializedAsync()
+    {
+        IsBusy = true;
+
+        errorMessage = null;
+
+        var authResponse = await AuthService.VerifyAdminAsync();
+        AdminStateManager.IsLoggedIn = authResponse.Data;
+
+        if (!AdminStateManager.IsLoggedIn)
+        {
+            IsBusy = false;
+            Nav.NavigateTo("/login");
+            return;
+        }
+
+        await LoadUsers();
+
+        IsBusy = false;
+    }
+
+    private async Task LoadUsers()
+    {
+        var response = await UserService.GetUsersAsync();
+        if (!response.IsSuccess)
+        {
+            errorMessage = response.ErrorMessage;
+            return;
+        }
+
+        usersList = response.Data;
+    }
+
+    private void OpenAddUserModal() { }
+
+    private async Task DeleteUser(string email)
+    {
+        updatingEmails.Add(email);
+        errorMessage = null;
+
+        try
+        {
+            var response = await Http.DeleteAsync($"api/admin/users/{Uri.EscapeDataString(email)}");
+            if (response.IsSuccessStatusCode)
+            {
+                usersList.RemoveAll(u => u.Email == email);
+                AvailableCities = usersList.Select(u => u.City).Distinct().OrderBy(c => c).ToList();
+            }
+            else
+            {
+                var errorText = await response.Content.ReadAsStringAsync();
+                errorMessage = $"فشل حذف المستخدم: {errorText}";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"حدث خطأ أثناء الحذف: {ex.Message}";
+        }
+        finally
+        {
+            updatingEmails.Remove(email);
+        }
+    }
+}

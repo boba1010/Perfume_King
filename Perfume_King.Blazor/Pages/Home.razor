@@ -1,0 +1,61 @@
+﻿@page "/"
+@using Perfume_King.Blazor.Components
+@using Perfume_King.Shared.DTOs
+@using Perfume_King.Shared.Services
+@inject NavigationManager Nav
+@inject IPerfumeService PerfumeService
+@inject IAuthService AuthService
+
+<PageTitle>Home -- Perfume King</PageTitle>
+
+@if (!IsBusy)
+{
+    <div class="main">
+        <HeroSection />
+
+        <div class="container text-center my-5 py-3">
+            <h2 class="display-5 fs-2-sm fw-bold text-dark text-uppercase tracking-tight mb-2">
+                @SharedResource.MostSoldPerfumesHeader
+            </h2>
+        </div>
+
+
+        <PerfumesSection Perfumes="perfumes" />
+
+        <InfoSection />
+    </div>    
+}
+else
+{
+    <div class="position-absolute top-50 start-50 translate-middle text-center">
+        <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+}
+
+@code {
+    private List<PerfumeDTO> perfumes = [];
+    private bool IsBusy { get; set; }
+    private string? ErrorMsg { get; set; }
+
+    protected async override Task OnInitializedAsync()
+    {
+        IsBusy = true;
+
+        var authResponse = await AuthService.VerifyUserAsync();
+        UserStateManager.IsLoggedIn = authResponse.Data;
+
+        var response = await PerfumeService.GetFeaturedPerfumesAsync();
+        if (!response.IsSuccess)
+        {
+            IsBusy = false;
+            ErrorMsg = response.ErrorMessage;
+            return;
+        }
+
+        perfumes = response.Data;
+
+        IsBusy = false;
+    }
+}

@@ -1,0 +1,25 @@
+﻿@using System.Globalization
+@inject NavigationManager NavManager
+
+<div class="d-flex align-items-center">
+    @if (CultureInfo.CurrentCulture.TwoLetterISOLanguageName == "en")
+    {
+        <button class="nav-link btn btn-link text-white fw-bold small text-uppercase p-0 border-0" @onclick='() => ChangeLanguage("ar-EG")'>
+            En
+        </button>
+    }
+    else
+    {
+        <button class="nav-link btn btn-link text-white fw-bold small text-uppercase p-0 border-0" @onclick='() => ChangeLanguage("en-US")'>
+            Ar
+        </button>
+    }
+</div>
+
+@code {
+    private void ChangeLanguage(string cultureName)
+    {
+        var targetUri = NavManager.GetUriWithQueryParameter("culture", cultureName);
+        NavManager.NavigateTo(targetUri, forceLoad: true);
+    }
+}

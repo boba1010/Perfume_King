@@ -1,0 +1,126 @@
+﻿@page "/perfumes"
+@using Perfume_King.Blazor.Components
+@using Perfume_King.Shared.DTOs
+@using Shared.Services
+@inject IAuthService AuthService
+@inject IPerfumeService PerfumeService
+@inject ICartService CartService
+@inject IJSRuntime JS
+
+<PageTitle>Perfume King -- All Perfumes</PageTitle>
+
+@if (!IsBusy)
+{
+    <div class="container my-4">
+        <div class="mb-4">
+            <h2 class="fw-bold">@SharedResource.AllPerfumesLabel</h2>
+            <p class="text-muted">@SharedResource.BrowseCollectionLabel</p>
+        </div>
+        @if (!(perfumes == null || perfumes.Count <= 0))
+        {
+            <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3">
+                @if (perfumes != null)
+                {
+                    @foreach (var perfume in perfumes)
+                    {
+                        <div class="col">
+                            <ProductCard Perfume="perfume" 
+                                AddToCart="AddToCart" />
+                        </div>
+                    }
+                }
+            </div>
+        }
+        else
+        {
+            <div class="card bg-white p-5 text-center my-4 border-0 shadow-sm">
+                <h4 class="fw-bold">@SharedResource.NoPerfumesAvailable</h4>
+                <NavLink href="/" class="btn btn-dark px-4 shadow-sm">@SharedResource.GoBack</NavLink>
+            </div>
+        }
+    </div>    
+}
+else
+{
+    <div class="position-absolute top-50 start-50 translate-middle text-center">
+        <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+}
+
+<ContentDialog Title="DialogTitle"
+               @bind-IsVisible="IsDialogVisible"
+               PrimaryButtonText="OK"
+               FullSizeDesired="md">
+    <ContentTemplate>
+        @if (!string.IsNullOrEmpty(DialogContentBody))
+        {
+            <span dir="rtl" class="d-block text-end">
+                @((MarkupString)DialogContentBody)
+            </span>
+        }
+    </ContentTemplate>
+</ContentDialog>
+
+@code {
+    private List<PerfumeDTO> perfumes { get; set; } = new();
+    private bool IsBusy { get; set; }
+    private string? ErrorMsg { get; set; }
+
+    private bool IsDialogVisible { get; set; }
+
+    private void ShowDialog() => IsDialogVisible = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        IsBusy = true;
+
+        var authResponse = await AuthService.VerifyUserAsync();
+        UserStateManager.IsLoggedIn = authResponse.Data;
+
+        var response = await PerfumeService.GetPerfumesAsync();
+
+        if (!response.IsSuccess)
+        {
+            IsBusy = false;
+            ErrorMsg = response.ErrorMessage;
+            return;
+        }
+
+        perfumes = response.Data!;
+
+        IsBusy = false;
+    }
+
+    private string DialogContentBody { get; set; } = "";
+    private string DialogTitle { get; set; } = "";
+
+    private async Task AddToCart(int id)
+    {
+        if (!UserStateManager.IsLoggedIn)
+        {
+            DialogTitle = "Please Login";
+            DialogContentBody = "Login to be able to access the cart and add <span class=\"text - warning fw - semibold\">perfumes</span> to it.";
+            ShowDialog();
+            return;
+        }
+
+        var response = await CartService.AddPerfumeToCartAsync(id);
+
+        if (!response.IsSuccess)
+        {
+            ErrorMsg = response.ErrorMessage;
+            DialogTitle = "Something wrong has happened";
+            DialogContentBody = ErrorMsg!;
+            ShowDialog();
+            return;
+        }
+
+        DialogTitle = "Saved successfully to your cart";
+        DialogContentBody = null!;
+        ShowDialog();
+
+        UserStateManager.CartItemsCount += 1;
+    }
+}

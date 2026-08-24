@@ -1,0 +1,41 @@
+﻿@using Perfume_King.Shared.DTOs
+
+<div class="card h-100 bg-white overflow-hidden">
+    <div class="row g-0 h-100 align-items-center">
+
+        <div class="col-4 col-sm-12">
+            <div class="ratio ratio-1x1 bg-light">
+                <img src="@Perfume.ImageUri"
+                        class="img-fluid object-fit-cover w-100 h-100"
+                        alt="@Perfume.Name" />
+            </div>
+        </div>
+
+        <div class="col-8 col-sm-12">
+            <div class="card-body d-flex flex-column text-start text-sm-center p-3">
+                <h5 class="card-title fw-bold text-truncate mb-1">
+                    @Perfume.Name
+                </h5>
+
+                <p class="card-text text-muted mb-2 mb-sm-3">
+                    @Perfume.Price EGP
+                </p>
+
+                <button class="btn btn-dark w-100 mt-auto py-2" @onclick="() => AddToCartAsync(Perfume.Id)">
+                    Add to cart
+                </button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+@code {
+    [Parameter] public PerfumeDTO Perfume { get; set; }
+    [Parameter] public EventCallback<int> AddToCart { get; set; }
+
+    private async Task AddToCartAsync(int id)
+    {
+        await AddToCart.InvokeAsync(id);
+    }
+}

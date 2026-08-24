@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="Perfume_King.Admin/Perfume_King.Admin.csproj" Id="3deb2996-5b42-47bb-831d-3418a3b27091" />
+  <Project Path="Perfume_King.API/Perfume_King.API.csproj" Id="7da806b2-9aaf-40eb-931f-2733215d79eb" />
+  <Project Path="Perfume_King.Blazor/Perfume_King.Blazor.csproj" Id="1092a822-e9dd-46d9-be4c-bfa3b6f7ace6" />
+  <Project Path="Perfume_King.Shared/Perfume_King.Shared.csproj" Id="fa634fbd-14e7-4a73-90f6-be06b242f16b" />
+</Solution>

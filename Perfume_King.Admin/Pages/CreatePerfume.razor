@@ -1,0 +1,236 @@
+﻿@page "/perfumes/create"
+@using Shared.Contracts.Requests
+@using Shared.DTOs
+@using Shared.Services
+@using System.Net.Http.Headers
+@inject IAuthService AuthService
+@inject IPerfumeService PerfumeService
+@inject ApiClient ApiClient
+@inject NavigationManager Nav
+
+<PageTitle>Perfume King:ADMIN -- Create Perfume</PageTitle>
+
+<div class="container-fluid py-5 px-3 px-md-4">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-8 col-lg-6 col-xl-5">
+            
+            <!-- Premium Dark Form Card Container -->
+            <div class="card bg-dark text-white border-secondary shadow-lg">
+                <div class="card-body p-4 p-md-5">
+                    
+                    <!-- Form Title Header -->
+                    <h4 class="text-warning fw-bold text-uppercase text-center mb-4 pb-2 border-bottom border-secondary">
+                        إضافة عطر جديد
+                    </h4>
+
+                    <EditForm Model="@request" OnValidSubmit="HandleCreate">
+                        <DataAnnotationsValidator />
+
+                        <!-- Perfume Name Input Field -->
+                        <div class="mb-4">
+                            <label class="form-label text-white-50 small text-uppercase fw-semibold mb-2">الاسم</label>
+                            <InputText class="form-control form-control-lg bg-dark text-white border-secondary" @bind-Value="request.Name" placeholder="أدخل اسم العطر..." />
+                            <ValidationMessage For="@(() => request.Name)" class="text-danger small mt-1" />
+                        </div>
+
+                        <!-- Grid Layout for Price & Category Inputs -->
+                        <div class="row g-3 mb-4">
+                            <!-- Price Input -->
+                            <div class="col-12 col-sm-6">
+                                <label class="form-label text-white-50 small text-uppercase fw-semibold mb-2">السعر</label>
+                                <InputNumber class="form-control form-control-lg bg-dark text-white border-secondary" @bind-Value="request.Price" placeholder="0.00" />
+                                <ValidationMessage For="@(() => request.Price)" class="text-danger small mt-1" />
+                            </div>
+                            
+                            <!-- Category Select Dropdown -->
+                            <div class="col-12 col-sm-6">
+                                <label class="form-label text-white-50 small text-uppercase fw-semibold mb-2">الفئة</label>
+                                <InputSelect class="form-select form-select-lg bg-dark text-white border-secondary" @bind-Value="request.Category">
+                                    @foreach (var cat in Enum.GetValues<Category>()) 
+                                    {
+                                        <option value="@cat" class="bg-dark">@GetCategoryLabel(cat)</option>
+                                    }
+                                </InputSelect>
+                                <ValidationMessage For="@(() => request.Category)" class="text-danger small mt-1" />
+                            </div>
+                        </div>
+
+                        <!-- Modern Native File Uploader Field -->
+                        <div class="mb-4">
+                            <label class="form-label text-white-50 small text-uppercase fw-semibold mb-2">صورة العطر</label>
+                            <InputFile OnChange="OnInputFileChange" class="form-control form-control-lg bg-dark text-white border-secondary" accept="image/*" />
+                            
+                            <!-- Custom UI File Validation Trigger -->
+                            @if (showImageValidationError)
+                            {
+                                <div class="text-danger small mt-1">يرجى اختيار صورة صالحة للعطر قبل الإرسال</div>
+                            }
+                        </div>
+
+                        <!-- Dynamic Local Image Live Preview Box -->
+                        @if (!string.IsNullOrEmpty(previewImageUrl)) 
+                        {
+                            <div class="mb-4 p-3 bg-black bg-opacity-40 rounded-3 border border-secondary text-center">
+                                <div class="d-flex justify-content-between align-items-center mb-2 px-1">
+                                    <span class="text-warning small fw-bold">معاينة الغلاف الرقمي</span>
+                                    <span class="badge bg-secondary text-uppercase">Local Preview</span>
+                                </div>
+                                <div class="position-relative overflow-hidden rounded border border-dark bg-dark d-inline-block w-100 shadow-sm" style="max-width: 260px; aspect-ratio: 1/1;">
+                                    <img src="@previewImageUrl" alt="معاينة الصورة" class="w-100 h-100" style="object-fit: cover;" />
+                                </div>
+                            </div>
+                        }
+
+                        <!-- Availability Modern Form Switch -->
+                        <div class="form-check form-switch mb-4 fs-6">
+                            <InputCheckbox class="form-check-input" @bind-Value="request.IsAvailable" id="isAvailable" role="switch" />
+                            <label class="form-check-label text-white-50 ms-2" for="isAvailable">متاح للبيع فوراً في المتجر</label>
+                        </div>
+
+                        <!-- Server-Side Error Alert Box -->
+                        @if (errorMessage is not null) 
+                        {
+                            <div class="alert alert-danger d-flex align-items-center mb-4 py-2 small" role="alert">
+                                <div>@errorMessage</div>
+                            </div>
+                        }
+
+                        <!-- Action Submit Button -->
+                        <button type="button" class="btn btn-warning btn-lg fw-bold text-uppercase w-100 py-3 shadow" disabled="@IsBusy" @onclick="HandleCreate">
+                            @if (IsBusy)
+                            {
+                                <div class="d-flex align-items-center justify-content-center">
+                                    <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                    <span>جارٍ الحفظ ورفع الصورة للسحابة...</span>
+                                </div>
+                            }
+                            else
+                            {
+                                <span>حفظ العطر ونشره</span>
+                            }
+                        </button>
+                    </EditForm>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@code {
+    private CreatePerfumeRequest request = new();
+    private IBrowserFile? selectedFile;
+    private string? previewImageUrl;
+    private bool showImageValidationError = false;
+    private bool IsBusy { get; set; } = false;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authResponse = await AuthService.VerifyAdminAsync();
+        AdminStateManager.IsLoggedIn = authResponse.Data;
+
+        if (!AdminStateManager.IsLoggedIn)
+        {
+            IsBusy = false;
+            Nav.NavigateTo("/login");
+            return;
+        }
+    }
+
+    private async Task OnInputFileChange(InputFileChangeEventArgs e)
+    {
+        selectedFile = e.File;
+        showImageValidationError = false;
+
+        if (selectedFile != null)
+        {
+            // Limit browser preview loading up to 10MB file safely
+            var maxAllowedSize = 10 * 1024 * 1024;
+
+            // Downscale image layout on the browser side just for visual optimization performance
+            var resizedFile = await selectedFile.RequestImageFileAsync(selectedFile.ContentType, 400, 400);
+            var buffer = new byte[resizedFile.Size];
+            await resizedFile.OpenReadStream(maxAllowedSize).ReadAsync(buffer);
+
+            // Map the byte array to a stream string format readable directly by standard HTML image tags
+            previewImageUrl = $"data:{selectedFile.ContentType};base64,{Convert.ToBase64String(buffer)}";
+        }
+    }
+
+    private async Task HandleCreate()
+    {
+        IsBusy = true;
+        errorMessage = null;
+
+        // Custom block check since DataAnnotationsValidator cannot bind natively to <InputFile> target elements
+        if (selectedFile == null)
+        {
+            showImageValidationError = true;
+            IsBusy = false;
+            return;
+        }
+
+        Console.WriteLine("trying to submit the request");
+
+        try
+        {
+            // Generating standard Multipart Content Payload matching server side IFormFile configuration
+            using var content = new MultipartFormDataContent();
+
+            // Append standard form fields matching CreatePerfumeRequest parameters exactly
+            content.Add(new StringContent(request.Name ?? string.Empty), "Name");
+            content.Add(new StringContent(request.Price.ToString(System.Globalization.CultureInfo.InvariantCulture)), "Price");
+            content.Add(new StringContent(request.IsAvailable.ToString().ToLower()), "IsAvailable");
+            content.Add(new StringContent(((int)request.Category).ToString()), "Category");
+
+            // Stream raw file content memory allocation configuration (Sets a 10MB ceiling profile)
+            var fileStream = selectedFile.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024);
+            var streamContent = new StreamContent(fileStream);
+            streamContent.Headers.ContentType = new MediaTypeHeaderValue(selectedFile.ContentType);
+
+            content.Add(streamContent, "Image", selectedFile.Name);
+
+            var response = await ApiClient.SendAsync(client => client.PostAsync("https://localhost:7224/api/admin/perfumes/create", content), "admin");
+
+            if (response.IsSuccessStatusCode)
+            {
+                request = new();
+                selectedFile = null;
+                previewImageUrl = null;
+                Nav.NavigateTo("/perfumes");
+                return;
+            }
+
+            errorMessage = "Error: Failed to save the file on the cloud.";
+        }
+        catch (TaskCanceledException)
+        {
+            errorMessage = "Error: Connection Timeout.";
+        }
+        catch (HttpRequestException)
+        {
+            errorMessage = "Error: Network connection failed.";
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Error: An unexpected system error occurred.";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private string GetCategoryLabel(Category category)
+    {
+        return category switch
+        {
+            Category.Men => "رجالي (Men)",
+            Category.Women => "نسائي (Women)",
+            Category.Unisex => "مناسب للجنسين (Unisex)",
+            _ => category.ToString()
+        };
+    }
+}

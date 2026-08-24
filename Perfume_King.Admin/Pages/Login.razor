@@ -1,0 +1,150 @@
+﻿@page "/login"
+@using Perfume_King.Shared.Contracts.Requests
+@using Shared.Services
+
+<PageTitle>Perfume King:ADMIN -- Login</PageTitle>
+
+<div class="container-fluid min-vh-100 d-flex align-items-center justify-content-center py-5 px-2 px-sm-3 px-md-4">
+    <div class="row justify-content-center align-items-center w-100 m-0">
+        <div class="col-12 col-sm-10 col-md-8 col-lg-5 col-xl-4 p-0">
+
+            <div class="card bg-dark text-white border-secondary shadow-lg overflow-hidden">
+                <div class="card-body p-4 p-sm-5">
+
+                    <div class="text-center mb-4 pb-1">
+                        <h4 class="text-warning fw-bold text-uppercase mb-1 fs-4 fs-sm-3">تسجيل الدخول</h4>
+                        <p class="text-white-50 small mb-0 px-2">لوحة تحكم إدارة دليل العطور والمخزون المتقدمة</p>
+                    </div>
+
+                    <EditForm Model="@loginRequest" OnValidSubmit="HandleLogin" class="w-100">
+                        <DataAnnotationsValidator />
+
+                        <div class="mb-4">
+                            <label class="form-label text-white-50 small text-uppercase fw-semibold mb-2">اسم المستخدم</label>
+                            <div class="input-group input-group-lg-down">
+                                <span class="input-group-text bg-black border-secondary border-start-0 text-white-50 px-3">
+                                    <i class="bi bi-person-fill"></i>
+                                </span>
+                                <InputText class="form-control bg-black text-white border-secondary border-end-0 shadow-none ps-3 pe-0 custom-placeholder"
+                                           @bind-Value="loginRequest.Username"
+                                           placeholder="أدخل اسم المستخدم..." />
+                            </div>
+                            <ValidationMessage For="@(() => loginRequest.Username)" class="text-danger small mt-1 d-block" />
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label text-white-50 small text-uppercase fw-semibold mb-2">كلمة المرور</label>
+                            <div class="input-group input-group-lg-down">
+                                <button type="button"
+                                        class="input-group-text bg-black border-secondary border-start-0 text-white-50 px-3 shadow-none focus-visible-toggle"
+                                        @onclick="TogglePasswordVisibility">
+                                    <i class="bi @(showPassword ? "bi-eye-slash-fill" : "bi-eye-fill")"></i>
+                                </button>
+                                <InputText type="@(showPassword ? "text" : "password")"
+                                           class="form-control bg-black text-white border-secondary border-end-0 shadow-none ps-3 pe-0 custom-placeholder"
+                                           @bind-Value="loginRequest.Password"
+                                           placeholder="أدخل كلمة المرور..." />
+                            </div>
+                            <ValidationMessage For="@(() => loginRequest.Password)" class="text-danger small mt-1 d-block" />
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(errorMessage))
+                        {
+                            <div class="alert alert-danger mb-4 border-0 shadow-sm animate__animated animate__fadeIn d-flex align-items-center gap-2 p-3" role="alert">
+                                <i class="bi bi-exclamation-triangle-fill fs-5 flex-shrink-0"></i>
+                                <span class="small fw-semibold">@errorMessage</span>
+                            </div>
+                        }
+
+                        <button type="submit" class="btn btn-warning btn-lg-down fw-bold text-uppercase w-100 py-2-5 py-sm-3 shadow-sm mt-2" disabled="@IsBusy">
+                            @if (IsBusy)
+                            {
+                                <div class="d-flex align-items-center justify-content-center gap-2">
+                                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                    <span>جاري التحقق من البيانات...</span>
+                                </div>
+                            }
+                            else
+                            {
+                                <span>دخول اللوحة</span>
+                            }
+                        </button>
+                    </EditForm>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<style>
+    .custom-placeholder::placeholder {
+        color: rgba(255, 255, 255, 0.4) !important;
+        opacity: 1 !important;
+    }
+
+    .input-group:focus-within .input-group-text,
+    .input-group:focus-within .form-control {
+        border-color: #ffc107 !important;
+    }
+
+    .focus-visible-toggle:focus {
+        background-color: rgba(255, 193, 7, 0.1) !important;
+        color: #ffc107 !important;
+    }
+    @@media (max-width: 576px) {
+        .py-5 {
+            padding-top: 2.5rem !important;
+            padding-bottom: 2.5rem !important;
+        }
+
+        .btn-lg-down {
+            padding-top: 0.75rem !important;
+            padding-bottom: 0.75rem !important;
+            font-size: 0.95rem !important;
+        }
+
+        .input-group-lg-down .form-control,
+        .input-group-lg-down .input-group-text {
+            padding-top: 0.6rem !important;
+            padding-bottom: 0.6rem !important;
+            font-size: 0.9rem !important;
+        }
+    }
+</style>
+
+
+@code {
+    private RequestAdminLogin loginRequest = new();
+    private bool showPassword = false;
+    private bool IsBusy { get; set; } = false;
+    private string? errorMessage;
+
+    [Inject] private NavigationManager Nav { get; set; } = default!;
+    [Inject] private IAuthService AuthService { get; set; } = default!;
+
+    private void TogglePasswordVisibility()
+    {
+        showPassword = !showPassword;
+    }
+
+    private async Task HandleLogin()
+    {
+        IsBusy = true;
+        errorMessage = null;
+
+        var response = await AuthService.AdminLoginAsync(loginRequest);
+        if (!response.IsSuccess)
+        {
+            IsBusy = false;
+            errorMessage = $"{response.ErrorMessage}";
+            return;
+        }
+
+        AdminStateManager.IsLoggedIn = true;
+        Nav.NavigateTo("/");
+
+        IsBusy = false;
+    }
+}

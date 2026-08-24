@@ -1,0 +1,194 @@
+﻿@page "/perfumes"
+@using Perfume_King.Admin.Components
+@using Shared.DTOs
+@using Shared.Services
+@inject IAuthService AuthService
+@inject IPerfumeService PerfumeService
+@inject NavigationManager Nav
+
+<PageTitle>Perfume King:ADMIN -- Perfumes</PageTitle>
+
+<style>
+    .input-group:focus-within .input-group-text,
+    .input-group:focus-within .form-control {
+        border-color: #ffc107 !important;
+    }
+
+    .form-select:focus {
+        border-color: #ffc107 !important;
+    }
+
+    .transition-hover {
+        transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease;
+    }
+
+    .transition-hover:hover {
+        transform: translateY(-4px);
+        border-color: rgba(255, 193, 7, 0.4) !important;
+    }
+
+    .white-placeholder::placeholder {
+        color: rgba(255, 255, 255, 0.75) !important;
+        opacity: 1 !important;
+    }
+
+    @@media (max-width: 360px) {
+        .flex-xs-row {
+            flex-direction: column !important;
+        }
+    }
+</style>
+
+<div class="container-fluid py-5 px-2 px-sm-3 px-md-4">
+
+    <div class="d-flex flex-column flex-sm-row justify-content-between align-items-stretch align-items-sm-center gap-3 mb-4 pb-3 border-bottom border-secondary">
+        <div class="text-center text-sm-start">
+            <h4 class="text-warning fw-bold text-uppercase mb-1 fs-4 fs-md-3">دليل المنتجات والمخزون</h4>
+            <p class="small mb-0">عرض العطور الحالية، تعديل الأسعار، أو إدارتها بشكل مباشر</p>
+        </div>
+        <NavLink href="/perfumes/create" class="btn btn-warning fw-bold text-uppercase d-flex align-items-center justify-content-center gap-2 px-3 py-2-5 shadow-sm">
+            <i class="bi bi-plus-circle-fill"></i>
+            <span>إضافة عطر جديد</span>
+        </NavLink>
+    </div>
+
+    <!-- IN DEVELOPMENT -->
+    <PerfumesSearchBar Filter="@SelectedCategoryFilter"
+            Query="@SearchQuery"/>
+    <!-- --------------------------------------------- -->
+    
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <ErrorAlert ErrorMessage="@errorMessage" />
+    }
+
+    @if (IsBusy)
+    {
+        <LoadingRing Message="جارٍ تحميل دليل العطور..." />
+    }
+    else if (!FilteredPerfumes.Any())
+    {
+        <PerfumeNotFound />
+    }
+    else
+    {
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 row-cols-xl-4 g-3 g-md-4">
+            @foreach (var perfume in FilteredPerfumes)
+            {
+                <PerfumeCard DeleteRequest="DeleteRequest"
+                        Perfume="perfume" />
+            }
+        </div>
+    }
+</div>
+
+<ContentDialog @bind-IsVisible="_showDialog"
+               Title="@DialogTitle"
+               PrimaryButtonText="حذف نهائي"
+               CloseButtonText="إلغاء الأمر"
+               FullSizeDesired="md"
+               OnClose="ConfirmDelete">
+    <ContentTemplate>
+        @if (!string.IsNullOrEmpty(DialogContentBody))
+        {
+            <span dir="rtl" class="d-block text-end">
+                @((MarkupString)DialogContentBody)
+            </span>
+        }
+    </ContentTemplate>
+</ContentDialog>
+
+@code {
+    private List<PerfumeDTO> perfumesList = new();
+    private bool IsBusy { get; set; } = true;
+    private string? errorMessage;
+
+    private bool _showDialog = false;
+    private void ShowDialog() => _showDialog = true;
+
+    private string SearchQuery { get; set; } = string.Empty;
+    private string SelectedCategoryFilter { get; set; } = "All";
+
+    [Inject] private HttpClient Http { get; set; } = default!;
+
+    private IEnumerable<PerfumeDTO> FilteredPerfumes => perfumesList
+        .Where(p => (string.IsNullOrWhiteSpace(SearchQuery) || p.Name.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase)) &&
+                    (SelectedCategoryFilter == "All" || GetCategoryLabel(p.Category) == SelectedCategoryFilter));
+
+    private string GetCategoryLabel(Category category)
+    {
+        return category switch
+        {
+            Category.Men => "رجالي (Men)",
+            Category.Women => "نسائي (Women)",
+            Category.Unisex => "مناسب للجنسين (Unisex)",
+            _ => category.ToString()
+        };
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authResponse = await AuthService.VerifyAdminAsync();
+        AdminStateManager.IsLoggedIn = authResponse.Data;
+
+        if (!AdminStateManager.IsLoggedIn)
+        {
+            IsBusy = false;
+            Nav.NavigateTo("/login");
+            return;
+        }
+
+        await LoadPerfumes();
+    }
+
+    private async Task LoadPerfumes()
+    {
+        IsBusy = true;
+        errorMessage = null;
+
+        var response = await PerfumeService.GetPerfumesAsync();
+        if (!response.IsSuccess)
+        {
+            IsBusy = false;
+            errorMessage = response.ErrorMessage;
+            return;
+        }
+
+        perfumesList = response.Data;
+
+        IsBusy = false;
+    }
+
+    private string DialogTitle { get; set; } = "";
+    private string DialogContentBody { get; set; } = "";
+
+    PerfumeDTO selectedDeletePerfume;
+    private async Task DeleteRequest(PerfumeDTO item)
+    {
+        selectedDeletePerfume = item;
+        DialogTitle = "حذف عنصر عطر";
+        DialogContentBody = $"أنت على وشك حذف <span class=\"text-warning fw-semibold\">{item.Name}</span> نهائياً. ستؤدي هذه العملية إلى إزالة جميع معلمات التخزين عبر تكوينات العلبة النشطة.";
+        ShowDialog();
+    }
+
+    private async Task ConfirmDelete(ContentDialog.ContentDialogResult result)
+    {
+        if (result != ContentDialog.ContentDialogResult.Primary)
+            return;
+
+        errorMessage = null;
+
+        var response = await PerfumeService.DeletePerfumeAsync(selectedDeletePerfume.Id);
+        if (!response.IsSuccess)
+        {
+            errorMessage = response.ErrorMessage;
+            return;
+        }
+
+        perfumesList.Remove(selectedDeletePerfume);
+
+        Nav.Refresh();
+
+        DialogContentBody = "";
+    }
+}

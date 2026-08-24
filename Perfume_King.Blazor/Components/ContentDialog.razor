@@ -1,0 +1,130 @@
+﻿@if (IsVisible)
+{
+    <!-- Modal Backdrop -->
+    <div class="modal-backdrop fade show" style="background-color: rgba(0, 0, 0, 0.5);"></div>
+
+    <!-- WinUI ContentDialog Wrapper -->
+    <div class="modal d-block fade show" tabindex="-1" role="dialog" aria-modal="true" style="pointer-events: none;">
+        <div class="modal-dialog modal-dialog-centered @GetSizeClass()" style="pointer-events: auto;">
+            <div class="modal-content bg-dark text-white border border-secondary border-opacity-25 rounded-3 shadow-lg p-2"
+                 style="font-family: 'Segoe UI', system-ui, sans-serif; min-height: 184px;">
+
+                <!-- Title Layer -->
+                @if (Title != null || TitleTemplate != null)
+                {
+                    <div class="modal-header border-0 pb-2 pt-3 px-4">
+                        <h5 class="modal-title fw-semibold text-warning tracking-wide fs-5 m-0">
+                            @if (TitleTemplate != null)
+                            {
+                                @TitleTemplate
+                            }
+                            else
+                            {
+                                @Title
+                            }
+                        </h5>
+                    </div>
+                }
+
+                <!-- Content Layer -->
+                <div class="modal-body py-2 px-4 text-start text-white-50 fs-6">
+                    @if (ContentTemplate != null)
+                    {
+                        @ContentTemplate
+                    }
+                    else
+                    {
+                        @Content
+                    }
+                </div>
+
+                <!-- Footer / Action Buttons (Dynamically aligned based on which are set) -->
+                @if (!string.IsNullOrEmpty(PrimaryButtonText) || !string.IsNullOrEmpty(SecondaryButtonText) || !string.IsNullOrEmpty(CloseButtonText))
+                {
+                    <div class="modal-footer border-0 pt-3 pb-3 px-4 d-flex gap-2 justify-content-end">
+                        @if (!string.IsNullOrEmpty(PrimaryButtonText))
+                        {
+                            <button type="button"
+                                    class="btn btn-warning fw-semibold text-dark px-4 py-2 rounded-pill shadow-sm small"
+                                    @onclick="() => HandleButtonClick(ContentDialogResult.Primary)">
+                                @PrimaryButtonText
+                            </button>
+                        }
+
+                        @if (!string.IsNullOrEmpty(SecondaryButtonText))
+                        {
+                            <button type="button"
+                                    class="btn btn-outline-secondary text-white border-secondary border-opacity-50 px-4 py-2 rounded-pill small"
+                                    @onclick="() => HandleButtonClick(ContentDialogResult.Secondary)">
+                                @SecondaryButtonText
+                            </button>
+                        }
+
+                        @if (!string.IsNullOrEmpty(CloseButtonText))
+                        {
+                            <button type="button"
+                                    class="btn btn-link text-white-50 text-decoration-none px-3 py-2 border-0 bg-transparent small"
+                                    @onclick="() => HandleButtonClick(ContentDialogResult.None)">
+                                @CloseButtonText
+                            </button>
+                        }
+                    </div>
+                }
+
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    // --- WinUI Enumeration Simulation ---
+    public enum ContentDialogResult { None, Primary, Secondary }
+
+    // --- WinUI Core Visibility ---
+    [Parameter] public bool IsVisible { get; set; } = false;
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+
+    // --- WinUI Property Mapping ---
+    [Parameter] public object? Title { get; set; }
+    [Parameter] public RenderFragment? TitleTemplate { get; set; }
+
+    [Parameter] public object? Content { get; set; }
+    [Parameter] public RenderFragment? ContentTemplate { get; set; }
+
+    [Parameter] public string PrimaryButtonText { get; set; } = "";
+    [Parameter] public string SecondaryButtonText { get; set; } = "";
+    [Parameter] public string CloseButtonText { get; set; } = "";
+
+    // --- WinUI Sizing Helpers ---
+    [Parameter] public string FullSizeDesired { get; set; } = "md"; // Maps to modern WinUI sizing configurations
+
+    // --- WinUI Custom Events ---
+    [Parameter] public EventCallback<ContentDialogResult> OnClose { get; set; }
+
+    private async Task HandleButtonClick(ContentDialogResult result)
+    {
+        IsVisible = false;
+        await IsVisibleChanged.InvokeAsync(IsVisible);
+        await OnClose.InvokeAsync(result);
+    }
+
+    private string GetSizeClass() => FullSizeDesired switch
+    {
+        "sm" => "modal-sm",
+        "lg" => "modal-lg",
+        "xl" => "modal-xl",
+        _ => "modal-md"
+    };
+
+    public async Task ShowAsync()
+    {
+        IsVisible = true;
+        await IsVisibleChanged.InvokeAsync(IsVisible);
+    }
+
+    public async Task HideAsync()
+    {
+        IsVisible = false;
+        await IsVisibleChanged.InvokeAsync(IsVisible);
+    }
+}

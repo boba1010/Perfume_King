@@ -1,0 +1,245 @@
+﻿@page "/"
+@using Shared.DTOs
+@using Shared.Services
+@inject IOrderService OrderService
+@inject IPerfumeService PerfumeService
+@inject IAuthService AuthService
+@inject NavigationManager Nav
+
+<PageTitle>Perfume King:ADMIN -- Home</PageTitle>
+
+<div class="container-fluid py-4 px-3 px-md-4 bg-light min-vh-100">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
+        <div>
+            <h2 class="fw-bold text-dark m-0">لوحة تحكم Perfume King</h2>
+            <p class="text-muted small m-0">إدارة العطور الخاصة بك، وتتبع المبيعات، ومعالجة طلبات الشراء الواردة.</p>
+        </div>
+        <button class="btn btn-warning text-dark fw-bold w-100 w-md-auto" @onclick="NavigateToAddPerfume">
+            <i class="bi bi-plus-circle me-1"></i> إضافة عطر جديد
+        </button>
+    </div>
+
+    @if (IsBusy)
+    {
+        <div class="position-absolute top-50 start-50 translate-middle text-center">
+            <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                <span class="visually-hidden">جاري التحميل...</span>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="row g-3 g-md-4 mb-4">
+            <div class="col-6 col-lg-3">
+                <div class="card border-0 shadow-sm rounded-3 h-100">
+                    <div class="card-body d-flex align-items-center p-3 p-md-4">
+                        <div class="bg-info bg-opacity-10 text-info p-2 p-md-3 rounded-3 me-2 me-md-3">
+                            <i class="bi bi-droplet-half fs-4 fs-md-3"></i>
+                        </div>
+                        <div>
+                            <span class="text-muted small fw-bold text-uppercase">إجمالي العطور</span>
+                            <h3 class="fw-bold m-0 mt-1 fs-4 fs-md-3">@perfumes.Count</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-lg-3">
+                <div class="card border-0 shadow-sm rounded-3 h-100">
+                    <div class="card-body d-flex align-items-center p-3 p-md-4">
+                        <div class="bg-success bg-opacity-10 text-success p-2 p-md-3 rounded-3 me-2 me-md-3">
+                            <i class="bi bi-receipt fs-4 fs-md-3"></i>
+                        </div>
+                        <div>
+                            <span class="text-muted small fw-bold text-uppercase">إجمالي الطلبات</span>
+                            <h3 class="fw-bold m-0 mt-1 fs-4 fs-md-3">@orders.Count</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-lg-3">
+                <div class="card border-0 shadow-sm rounded-3 h-100">
+                    <div class="card-body d-flex align-items-center p-3 p-md-4">
+                        <div class="bg-warning bg-opacity-10 text-warning p-2 p-md-3 rounded-3 me-2 me-md-3">
+                            <i class="bi bi-graph-up-arrow fs-4 fs-md-3"></i>
+                        </div>
+                        <div>
+                            <span class="text-muted small fw-bold text-uppercase">القطع المباعة</span>
+                            <h3 class="fw-bold m-0 mt-1 fs-4 fs-md-3">@perfumes.Sum(p => p.SaleNumber)</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-lg-3">
+                <div class="card border-0 shadow-sm rounded-3 h-100">
+                    <div class="card-body d-flex align-items-center p-3 p-md-4">
+                        <div class="bg-danger bg-opacity-10 text-danger p-2 p-md-3 rounded-3 me-2 me-md-3">
+                            <i class="bi bi-currency-pound fs-4 fs-md-3"></i>
+                        </div>
+                        <div>
+                            <span class="text-muted small fw-bold text-uppercase">إجمالي الإيرادات</span>
+                            <h3 class="fw-bold m-0 mt-1 fs-4 fs-md-3">@orders.Where(o => o.Status == OrderStatus.Completed).Sum(o => o.TotalPrice).ToString("N0") EGP</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-12 col-lg-8">
+                <div class="card border-0 shadow-sm rounded-3">
+                    <div class="card-header bg-white border-0 py-3 d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2">
+                        <h5 class="fw-bold m-0">طلبات الشراء الحديثة</h5>
+                        <NavLink class="btn btn-sm btn-outline-dark" href="/orders">اظهر كل الطلبات</NavLink>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light text-uppercase small text-muted">
+                                    <tr>
+                                        <th class="ps-3 ps-md-4">رقم الطلب</th>
+                                        <th>العميل</th>
+                                        <th class="d-none d-lg-table-cell">عدد البرفانات</th>
+                                        <th>السعر الكلي</th>
+                                        <th class="d-none d-md-table-cell">حالة الطلب</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if (!orders.Any())
+                                    {
+                                        <tr>
+                                            <td colspan="6" class="text-center py-4 text-muted">لا توجد طلبات.</td>
+                                        </tr>
+                                    }
+                                    @foreach (var order in orders.Take(5))
+                                    {
+                                        <tr>
+                                            <td class="ps-3 ps-md-4 fw-bold font-monospace text-secondary">@order.OrderNumber</td>
+                                            <td>
+                                                <span class="d-block fw-medium">@order.CustomerName</span>
+                                                <small class="text-muted d-block d-md-inline">@order.City, @order.Phone</small>
+                                                <!-- Shown on mobile in-cell since status column is hidden -->
+                                                <div class="d-md-none mt-2">
+                                                    <select class="form-select form-select-sm fw-medium border-0 rounded-2 shadow-none @GetStatusColorClass(order.Status)" value="@order.Status" @onchange="(e) => UpdateOrderStatus(order, e)">
+                                                        @foreach (OrderStatus status in Enum.GetValues(typeof(OrderStatus)))
+                                                        {
+                                                            <option value="@status" class="bg-white text-dark">@status</option>
+                                                        }
+                                                    </select>
+                                                </div>
+                                            </td>
+                                            <td class="d-none d-lg-table-cell">عنصر @order.Items.Sum(i => i.Quantity)</td>
+                                            <td class="fw-bold text-nowrap">@order.TotalPrice.ToString("N0") EGP</td>
+                                            <td class="d-none d-md-table-cell">
+                                                <select class="form-select form-select-sm fw-medium border-0 rounded-2 shadow-none @GetStatusColorClass(order.Status)" value="@order.Status" @onchange="(e) => UpdateOrderStatus(order, e)">
+                                                    @foreach (OrderStatus status in Enum.GetValues(typeof(OrderStatus)))
+                                                    {
+                                                        <option value="@status" class="bg-white text-dark">@status</option>
+                                                    }
+                                                </select>
+                                            </td>
+                                            <td>
+                                                <NavLink href="@($"order-details?num={order.OrderNumber}")" class="btn btn-sm btn-outline-dark text-nowrap">تفاصيل الطلب</NavLink>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-lg-4">
+                <div class="card border-0 shadow-sm rounded-3 mb-4">
+                    <div class="card-header bg-white border-0 py-3">
+                        <h5 class="fw-bold m-0">إدارة العطور</h5>
+                    </div>
+                    <div class="list-group list-group-flush">
+                        <NavLink class="list-group-item list-group-item-action py-3 d-flex align-items-center text-dark" href="/perfumes/create">
+                            <i class="bi bi-plus-circle me-3 text-success fs-5 flex-shrink-0"></i>
+                            <div>
+                                <span class="fw-bold d-block">إنشاء عطر جديد</span>
+                                <small class="text-muted">إضافة عناصر جديدة إلى دليل المتجر</small>
+                            </div>
+                        </NavLink>
+                        <NavLink class="list-group-item list-group-item-action py-3 d-flex align-items-center text-dark" href="/perfumes">
+                            <i class="bi bi-pencil-square me-3 text-info fs-5 flex-shrink-0"></i>
+                            <div>
+                                <span class="fw-bold d-block">عرض / تعديل / حذف الدليل</span>
+                                <small class="text-muted">عرض المنتجات، تعديل الأسعار، أو حذف المخزون</small>
+                            </div>
+                        </NavLink>
+                        <NavLink class="list-group-item list-group-item-action py-3 d-flex align-items-center text-dark" href="/users">
+                            <i class="bi bi-people me-3 text-warning fs-5 flex-shrink-0"></i>
+                            <div>
+                                <span class="fw-bold d-block">إدارة العملاء</span>
+                                <small class="text-muted">مراجعة حسابات العملاء والإشراف عليها</small>
+                            </div>
+                        </NavLink>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+
+@code {
+    private List<PerfumeDTO> perfumes = [];
+    private List<OrderRequestDTO> orders = [];
+    private bool IsBusy { get; set; } = false;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        IsBusy = true;
+
+        var authResponse = await AuthService.VerifyAdminAsync();
+        AdminStateManager.IsLoggedIn = authResponse.Data;
+
+        if (!AdminStateManager.IsLoggedIn)
+        {
+            IsBusy = false;
+            Nav.NavigateTo("/login");
+            return;
+        }
+
+        var perfumesResponse = await PerfumeService.GetPerfumesAsync();
+        if (perfumesResponse.IsSuccess)
+            perfumes = perfumesResponse.Data;
+
+        var ordersResponse = await OrderService.GetOrdersAdminAsync();
+        if (ordersResponse.IsSuccess)
+            orders = ordersResponse.Data;
+
+        IsBusy = false;
+    }
+
+    private async Task UpdateOrderStatus(OrderRequestDTO order, ChangeEventArgs e)
+    {
+        if (Enum.TryParse<OrderStatus>(e.Value?.ToString(), out var updatedStatus))
+        {
+            var oldStatus = order.Status;
+            order.Status = updatedStatus;
+
+            var response = await OrderService.UpdateOrderAsync(new() { OrderId = order.Id, OrderStatus = updatedStatus });
+            if (!response.IsSuccess)
+            {
+                errorMessage = response.ErrorMessage;
+                return;
+            }
+        }
+    }
+
+    private string GetStatusColorClass(OrderStatus status) => status switch 
+    {
+        OrderStatus.Pending => "bg-warning text-dark",
+        OrderStatus.Processing => "bg-info text-white",
+        OrderStatus.Completed => "bg-success text-white",
+        OrderStatus.Cancelled => "bg-danger text-white",
+        _ => "bg-secondary text-white"
+    };
+
+    private void NavigateToAddPerfume() => Nav.NavigateTo("/perfumes/create");
+}

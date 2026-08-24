@@ -1,0 +1,190 @@
+﻿@page "/orders"
+@using Perfume_King.Admin.Components
+@using Perfume_King.Shared.DTOs
+@using Shared.Services
+@inject NavigationManager Nav
+@inject IAuthService AuthService
+@inject IOrderService OrderService
+
+<PageTitle>Perfume King:ADMIN -- Orders</PageTitle>
+
+<div class="container-fluid py-4 py-md-5 px-2 px-sm-3 px-md-4">
+
+    <div class="d-flex flex-column flex-sm-row justify-content-between align-items-stretch align-items-sm-center gap-3 mb-4 pb-3 border-bottom border-secondary">
+        <div class="text-center text-sm-start">
+            <h4 class="text-warning fw-bold text-uppercase mb-1 fs-4 fs-md-3">إدارة طلبات المتجر</h4>
+            <p class="small mb-0">متابعة طلبات العملاء، تعديل حالات الشحن، وتتبع مبيعات العطور</p>
+        </div>
+        <button class="btn btn-outline-warning fw-bold text-uppercase d-flex align-items-center justify-content-center gap-2 px-3 py-2-5 shadow-sm" @onclick="RefreshOrders">
+            <i class="bi bi-arrow-clockwise"></i>
+            <span>تحديث الطلبات</span>
+        </button>
+    </div>
+
+    <!-- Reusable Search Filter Component -->
+    <OrdersSearchBar @bind-Query="SearchQuery" @bind-Filter="SelectedStatusFilter" GetStatusLabel="GetStatusLabel" />
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <ErrorAlert ErrorMessage="@errorMessage"/>
+    }
+
+    @if (IsBusy)
+    {
+        <LoadingRing Message="جارٍ تحميل سجل الطلبات..." />
+    }
+    else if (!FilteredOrders.Any())
+    {
+        <div class="text-center py-5 border border-secondary border-dashed rounded-3 bg-dark bg-opacity-50 mx-1">
+            <i class="bi bi-receipt text-white-50 display-3 d-block mb-3"></i>
+            <h5 class="text-white fw-bold">لم يتم العثور على أي طلبات</h5>
+            <p class="text-white-50 small mb-0 px-3">لا توجد طلبات تطابق معايير البحث الحالية</p>
+        </div>
+    }
+    else
+    {
+        <!-- Using your OrderCard Component here -->
+        <div class="d-flex flex-column w-100 gap-3 gap-md-4">
+            @foreach (var order in FilteredOrders)
+            {
+                <OrderCard Order="@order"
+                           IsExpanded="@expandedOrderIds.Contains(order.Id)"
+                           OnToggleExpand="() => ToggleOrderExpand(order.Id)"
+                           OnStatusChanged="(e) => UpdateOrderStatus(order, e)"
+                           GetStatusLabel="GetStatusLabel"
+                           GetStatusBadgeClass="GetStatusBadgeClass" />
+            }
+        </div>
+    }
+</div>
+
+<style>
+    .custom-placeholder::placeholder {
+        color: rgba(255, 255, 255, 0.4) !important;
+        opacity: 1 !important;
+    }
+
+    .input-group:focus-within .input-group-text,
+    .input-group:focus-within .form-control {
+        border-color: #ffc107 !important;
+    }
+
+    .form-select:focus {
+        border-color: #ffc107 !important;
+    }
+    @@media (max-width: 576px) {
+        .input-group-lg-down .form-control,
+        .input-group-lg-down .input-group-text,
+        .form-select-lg-down {
+            padding-top: 0.6rem !important;
+            padding-bottom: 0.6rem !important;
+            font-size: 0.9rem !important;
+        }
+    }
+</style>
+
+@code {
+    private List<OrderRequestDTO> ordersList = [];
+    private HashSet<int> expandedOrderIds = new();
+    private bool IsBusy { get; set; } = true;
+    private string? errorMessage;
+
+    private string SearchQuery { get; set; } = string.Empty;
+    private string SelectedStatusFilter { get; set; } = "All";
+
+    [Inject] private HttpClient Http { get; set; } = default!;
+
+    private IEnumerable<OrderRequestDTO> FilteredOrders => ordersList
+        .Where(o => (string.IsNullOrWhiteSpace(SearchQuery) ||
+                     o.CustomerName.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase) ||
+                     o.OrderNumber.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase)) &&
+                    (SelectedStatusFilter == "All" || o.Status.ToString() == SelectedStatusFilter))
+        .OrderByDescending(o => o.CreatedAt);
+
+    protected override async Task OnInitializedAsync()
+    {
+        IsBusy = true;
+        errorMessage = null;
+
+        var authResponse = await AuthService.VerifyAdminAsync();
+        AdminStateManager.IsLoggedIn = authResponse.Data;
+
+        if (!AdminStateManager.IsLoggedIn)
+        {
+            IsBusy = false;
+            Nav.NavigateTo("/login");
+            return;
+        }
+
+        await LoadOrders();
+
+        IsBusy = false;
+    }
+
+    private async Task LoadOrders()
+    {
+        var response = await OrderService.GetOrdersAdminAsync();
+        if (!response.IsSuccess)
+        {
+            errorMessage = response.ErrorMessage;
+            return;
+        }
+
+        ordersList = response.Data!;
+    }
+
+    private async Task RefreshOrders()
+    {
+        await LoadOrders();
+    }
+
+    private void ToggleOrderExpand(int orderId)
+    {
+        if (expandedOrderIds.Contains(orderId))
+            expandedOrderIds.Remove(orderId);
+        else
+            expandedOrderIds.Add(orderId);
+    }
+
+    private async Task UpdateOrderStatus(OrderRequestDTO order, ChangeEventArgs e)
+    {
+        if (!Enum.TryParse<OrderStatus>(e.Value?.ToString(), out var updatedStatus))
+            return;
+
+        errorMessage = null;
+
+        var oldStatus = order.Status;
+        order.Status = updatedStatus;
+
+        var response = await OrderService.UpdateOrderAsync(new() { OrderId = order.Id, OrderStatus = updatedStatus });
+        if (!response.IsSuccess)
+        {
+            order.Status = oldStatus;
+            errorMessage = response.ErrorMessage;
+        }
+    }
+
+    private string GetStatusLabel(OrderStatus status)
+    {
+        return status switch
+        {
+            OrderStatus.Pending => "قيد الانتظار (Pending)",
+            OrderStatus.Processing => "قيد التحضير (Processing)",
+            OrderStatus.Delivered => "تم التوصيل (Delivered)",
+            OrderStatus.Cancelled => "ملغي (Cancelled)",
+            _ => status.ToString()
+        };
+    }
+
+    private string GetStatusBadgeClass(OrderStatus status)
+    {
+        return status switch
+        {
+            OrderStatus.Pending => "bg-warning text-dark",
+            OrderStatus.Processing => "bg-info text-white",
+            OrderStatus.Delivered => "bg-success text-white",
+            OrderStatus.Cancelled => "bg-danger text-white",
+            _ => "bg-secondary text-white"
+        };
+    }
+}

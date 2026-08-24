@@ -1,0 +1,223 @@
+﻿@page "/cart"
+@using Shared.DTOs
+@using Shared.Services
+@inject NavigationManager Nav
+@inject ICartService CartService
+@inject IAuthService AuthService
+
+<PageTitle>Perfume King - Shopping Cart</PageTitle>
+
+@if (!IsBusy)
+{
+    <div class="container my-4">
+        <div class="mb-4">
+            <h2 class="fw-bold">@SharedResource.ShoppingCart</h2>
+            <p class="text-muted">
+                @if (CartItems == null || !CartItems.Any())
+                {
+                    @SharedResource.CartEmptyDescription
+                }
+                else if (CartItems.Count == 1)
+                {
+                    @SharedResource.CartSingleItem
+                }
+                else
+                {
+                    @string.Format(SharedResource.CartMultipleItems, CartItems.Count)
+                }
+            </p>
+        </div>
+
+        @if (CartItems != null && CartItems.Any())
+        {
+            <div class="row g-4">
+                <!-- 1. BASKET ITEMS LIST (Left Side) -->
+                <div class="col-12 col-lg-8">
+                    <div class="d-flex flex-column gap-3">
+                        @foreach (var item in CartItems)
+                        {
+                            <div class="card bg-white p-3">
+                                <div class="row g-3 align-items-center">
+
+                                    <!-- Product Image Thumbnail -->
+                                    <div class="col-3 col-sm-2 text-center">
+                                        <div class="bg-light border rounded overflow-hidden mx-auto" style="width: 65px; height: 65px;">
+                                            <img src="@item.ImageUri" class="w-100 h-100 object-fit-cover" alt="@item.PerfumeName" />
+                                        </div>
+                                    </div>
+
+                                    <!-- Product Title and Base Price -->
+                                    <div class="col-9 col-sm-4 text-start">
+                                        <h6 class="fw-bold mb-1 text-truncate">@item.PerfumeName</h6>
+                                        <span class="text-muted small">
+                                            @item.UnitPrice.ToString("N0", System.Globalization.CultureInfo.InvariantCulture) @SharedResource.CurrencySuffix
+                                        </span>
+                                    </div>
+
+                                    <!-- Quantity Counters -->
+                                    <div class="col-6 col-sm-3 text-start text-sm-center">
+                                        <div class="input-group input-group-sm d-inline-flex border rounded" style="max-width: 110px;">
+                                            <button class="btn btn-light border-0 px-2" type="button" @onclick="() => DecreaseQty(item)">−</button>
+                                            <span class="form-control text-center bg-white border-0 py-1 fw-medium">
+                                                @item.Quantity.ToString(System.Globalization.CultureInfo.InvariantCulture)
+                                            </span>
+                                            <button class="btn btn-light border-0 px-2" type="button" @onclick="() => IncreaseQty(item)">+</button>
+                                        </div>
+                                    </div>
+
+                                    <!-- Subtotal Price & Delete Button -->
+                                    <div class="col-6 col-sm-3 text-end">
+                                        <div class="d-flex align-items-center justify-content-end gap-3">
+                                            <span class="fw-bold text-dark">
+                                                @((item.UnitPrice * item.Quantity).ToString("N0", System.Globalization.CultureInfo.InvariantCulture)) @SharedResource.CurrencySuffix
+                                            </span>
+                                            <button class="btn btn-sm btn-link text-danger p-0" @onclick="() => RemoveItem(item)">
+                                                @SharedResource.Remove
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- 2. TOTALS CARD (Right Side) -->
+                <div class="col-12 col-lg-4">
+                    <div class="card bg-white p-3">
+                        <div class="card-body">
+                            <h5 class="fw-bold mb-3">@SharedResource.Summary</h5>
+
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="text-muted">@SharedResource.SubTotal</span>
+                                <span class="fw-medium">
+                                    @CartTotal.ToString("N0", System.Globalization.CultureInfo.InvariantCulture) @SharedResource.CurrencySuffix
+                                </span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-3">
+                                <span class="text-muted">@SharedResource.Shipping</span>
+                                <span class="text-success fw-medium">@SharedResource.Free</span>
+                            </div>
+
+                            <hr />
+
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <span class="fw-bold fs-5">@SharedResource.Total</span>
+                                <span class="fw-bold fs-5">
+                                    @CartTotal.ToString("N0", System.Globalization.CultureInfo.InvariantCulture) @SharedResource.CurrencySuffix
+                                </span>
+                            </div>
+
+                            <button class="btn btn-dark w-100 py-2.5 fw-bold text-uppercase" @onclick="GoToCheckout">
+                                @SharedResource.ProceedCheckout
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="card bg-white p-5 text-center my-4">
+                <div class="mb-3 text-secondary">
+                    <i class="bi bi-box2 fs-1"></i>
+                </div>
+                <h4 class="fw-bold">@SharedResource.CartIsEmpty</h4>
+                <p class="text-muted small mb-4">@SharedResource.EmptyCartSuggestion</p>
+                <NavLink href="perfumes" class="btn btn-dark px-4">@SharedResource.BrowsePerfumes</NavLink>
+            </div>
+        }
+    </div>
+
+}
+else
+{
+    <div class="position-absolute top-50 start-50 translate-middle text-center">
+        <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+}
+
+@code {
+    private List<CartItemDTO> CartItems { get; set; } = [];
+    private decimal CartTotal => CartItems.Sum(item => item.SubTotal);
+    private bool IsBusy { get; set; }
+    private string? ErrorMsg { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        IsBusy = true;
+
+        var authResponse = await AuthService.VerifyUserAsync();
+        UserStateManager.IsLoggedIn = authResponse.Data;
+
+        if (!UserStateManager.IsLoggedIn)
+        {
+            IsBusy = false;
+            Nav.NavigateTo("/login");
+            return;
+        }
+
+        var response = await CartService.GetCartAsync();
+        if (!response.IsSuccess)
+        {
+            IsBusy = false;
+            ErrorMsg = response.ErrorMessage;
+            return;
+        }
+
+        var cart = response.Data;
+
+        CartItems = cart?.CartItems!;
+
+        UserStateManager.CartItemsCount = CartItems.Count;
+
+        IsBusy = false;
+    }
+
+    private async Task IncreaseQty(CartItemDTO item)
+    {
+        var response = await CartService.ChangeCartItemQtyAsync(new() { CartItemId = item.Id, CartItemQty = item.Quantity + 1 });
+        if (!response.IsSuccess)
+        {
+            ErrorMsg = response.ErrorMessage;
+            return;
+        }
+
+        item.Quantity++;
+    }
+
+    private async Task DecreaseQty(CartItemDTO item)
+    {
+        var response = await CartService.ChangeCartItemQtyAsync(new() { CartItemId = item.Id, CartItemQty = item.Quantity - 1 });
+        if (!response.IsSuccess)
+        {
+            ErrorMsg = response.ErrorMessage;
+            return;
+        }
+
+        if (item.Quantity > 1) item.Quantity--;
+    }
+
+    private async Task RemoveItem(CartItemDTO item)
+    {
+        var response = await CartService.RemoveCartItemAsync(item.Id);
+        if (!response.IsSuccess)
+        {
+            ErrorMsg = response.ErrorMessage;
+            return;
+        }
+
+        CartItems.Remove(item);
+
+        UserStateManager.CartItemsCount -= 1;
+    }
+
+    private void GoToCheckout()
+    {
+        Nav.NavigateTo("/checkout");
+    }
+}
+

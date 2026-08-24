@@ -1,0 +1,167 @@
+﻿@page "/checkout"
+@using Shared.DTOs
+@using Shared.Services
+@inject IOrderService OrderService
+@inject IAuthService AuthService
+@inject NavigationManager Nav
+
+<PageTitle>Perfume King -- Checkout</PageTitle>
+
+<div class="container my-4">
+    <div class="mb-4">
+        <h2 class="fw-bold">@SharedResource.CheckoutTitle</h2>
+        <p class="text-muted">@SharedResource.CheckoutSubtitle</p>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-12 col-lg-7">
+            <div class="card bg-white p-3 shadow-sm border-0">
+                <div class="card-body">
+                    <h5 class="fw-bold mb-3">@SharedResource.DeliveryInformationHeader</h5>
+
+                    <!-- Custom Info Radio Switcher -->
+                    <div class="p-3 bg-light rounded-3 border mb-3">
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" id="userInfo" name="info"
+                                   checked @onclick="() => UseUserInfo = true">
+                            <label class="form-check-label fw-medium" for="userInfo">
+                                @SharedResource.UseProfileInfoLabel
+                            </label>
+                        </div>
+                        @* <div class="form-check">
+                            <input class="form-check-input" type="radio" id="yourInfo" name="info"
+                                   checked="@(!CheckoutData.UseProfileInfo)" @onclick="() => CheckoutData.UseProfileInfo = false">
+                            <label class="form-check-label fw-medium" for="yourInfo">
+                                Ship to a different address
+                            </label>
+                        </div> *@
+                    </div>
+
+                    <form>
+                        <!-- Conditional Custom Input Panel -->
+                        @* @if (!CheckoutData.UseProfileInfo)
+                        {
+                            <div class="mb-3 animate-fade-in">
+                                <label class="form-label small text-muted">@SharedResource.FullNameLabel</label>
+                                <input type="text" class="form-control" placeholder="@SharedResource.FullNamePlaceholder" required @bind="CheckoutData.FullName" />
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label small text-muted">@SharedResource.PhoneNumber</label>
+                                <input type="tel" class="form-control" placeholder="+20 1XX XXX XXXX" required @bind="CheckoutData.Phone" />
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label small text-muted">@SharedResource.City / @SharedResource.Governorate</label>
+                                <select class="form-select" @bind="CheckoutData.City">
+                                    <option value="Cairo">Cairo</option>
+                                    <option value="Giza">Giza</option>
+                                    <option value="Alexandria">Alexandria</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label small text-muted">@SharedResource.DeliveryAddress</label>
+                                <textarea class="form-control" rows="3" placeholder="Street Name, Building Number, Apartment..." required @bind="CheckoutData.Address"></textarea>
+                            </div>
+                        } *@
+
+                        <!-- Payment Method Block -->
+                        <div class="p-3 bg-light rounded-3 border">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="payment" 
+                                    id="cod" checked @onclick="() => PaymentMethod = PaymentMethod.COD">
+                                <label class="form-check-label fw-medium" for="cod">
+                                    @SharedResource.PaymentCodDescription
+                                </label>
+                                <small class="text-muted d-block">@SharedResource.PaymentCodDescription</small>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sticky Right Column Order Summary -->
+        <div class="col-12 col-lg-5">
+            <div class="card bg-white p-3 border-0 shadow-sm sticky-lg-top" style="top: 90px; z-index: 10;">
+                <div class="card-body">
+                    <h5 class="fw-bold mb-3">@SharedResource.OrderSummaryLabel</h5>
+
+                    <div class="d-flex flex-column gap-3 mb-4 max-vh-50 overflow-y-auto">
+                        @foreach (var item in CartItems)
+                        {
+                            <div class="d-flex align-items-center justify-content-between border-bottom pb-2">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="bg-light border rounded" style="width: 50px; height: 50px; overflow:hidden;">
+                                        <img src="@item.ImageUri" class="w-100 h-100 object-fit-cover" />
+                                    </div>
+                                    <div>
+                                        <span class="fw-medium d-block text-truncate" style="max-width: 180px;">@item.PerfumeName</span>
+                                        <small class="text-muted">@SharedResource.QuantityLabel: @item.Quantity</small>
+                                    </div>
+                                </div>
+                                <span class="fw-bold">@item.SubTotal.ToString() @SharedResource.CurrencySuffix</span>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">@SharedResource.SubTotal</span>
+                        <span>@Subtotal.ToString() @SharedResource.CurrencySuffix</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-3">
+                        <span class="text-muted">@SharedResource.Shipping</span>
+                        <span class="text-success fw-medium">@SharedResource.Free</span>
+                    </div>
+
+                    <hr />
+
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <span class="fw-bold fs-5">@SharedResource.Total</span>
+                        <span class="fw-bold fs-5 text-dark">@Subtotal.ToString() @SharedResource.CurrencySuffix</span>
+                    </div>
+
+                    <button class="btn btn-dark w-100 py-3 fw-bold text-uppercase rounded-3" @onclick="() => PlaceOrder()">
+                        @SharedResource.ConfirmRequestBtn
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<CartItemDTO> CartItems { get; set; } = new();
+    // private UserDTO User { get; set; } = new();
+    private decimal Subtotal => CartItems.Sum(item => item.SubTotal);
+    private string? ErrorMessage { get; set; }
+    private bool UseUserInfo { get; set; }
+    private PaymentMethod PaymentMethod { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authResponse = await AuthService.VerifyUserAsync();
+        UserStateManager.IsLoggedIn = authResponse.Data;
+
+        if (!UserStateManager.IsLoggedIn)
+        {
+            Nav.NavigateTo("/login");
+            return;
+        }
+    }
+
+    private async Task PlaceOrder()
+    {
+        var response = await OrderService.RequestOrderAsync(PaymentMethod);
+        if (!response.IsSuccess)
+        {
+            ErrorMessage = response.ErrorMessage;
+            return;
+        }
+
+        UserStateManager.CartItemsCount = 0;
+        Nav.NavigateTo("/orders");
+    }
+}

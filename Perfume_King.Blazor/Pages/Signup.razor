@@ -1,0 +1,100 @@
+﻿@page "/Signup"
+@using Shared.Services
+@using Shared.Contracts.Requests
+@inject NavigationManager Nav
+@inject IAuthService AuthService
+
+<PageTitle>Register -- Perfume King</PageTitle>
+
+@if (!IsBusy)
+{
+    <div class="container-fluid d-flex justify-content-center align-items-center py-5 px-3 bg-light-subtle min-vh-75">
+        <div class="card w-100 border border-secondary border-opacity-10 bg-white p-4 p-md-5 rounded-4 shadow-sm" style="max-width: 420px;">
+        
+            <div class="text-center mb-4">
+                <h2 class="fw-bold text-uppercase tracking-wider text-dark mb-1 fs-3">@SharedResource.CreateAccountText</h2>
+                <p class="text-muted small mb-0">@SharedResource.JoinToday</p>
+            </div>
+
+            <form class="needs-validation">
+                <div class="mb-3">
+                    <label class="form-label small fw-bold text-secondary text-uppercase tracking-wider fs-7" for="signupName">@SharedResource.FullNameLabel</label>
+                    <input class="form-control border border-secondary border-opacity-25 rounded-3 py-2.5 px-3 shadow-none bg-white text-dark" 
+                           placeholder="@SharedResource.FullNamePlaceholder" 
+                           type="text" 
+                           required 
+                           @bind="Request.FullName" />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label small fw-bold text-secondary text-uppercase tracking-wider fs-7" for="signupEmail">@SharedResource.EmailLabel</label>
+                    <input class="form-control border border-secondary border-opacity-25 rounded-3 py-2.5 px-3 shadow-none bg-white text-dark" 
+                           placeholder="@SharedResource.EmailPlaceholder" 
+                           type="email" 
+                           required 
+                           @bind="Request.Email" />
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label small fw-bold text-secondary text-uppercase tracking-wider fs-7" for="signupPassword">@SharedResource.PasswordLabel</label>
+                    <input class="form-control border border-secondary border-opacity-25 rounded-3 py-2.5 px-3 shadow-none bg-white text-dark" 
+                           placeholder="@SharedResource.PasswordPlaceholder" 
+                           type="password" 
+                           required 
+                           @bind="Request.Password" />
+                </div>
+
+                @if (!string.IsNullOrEmpty(ErrorMsg))
+                {
+                    <div class="mb-4 text-white bg-danger">
+                        @ErrorMsg
+                    </div>
+                }
+
+                <button type="button" 
+                    class="btn btn-dark w-100 py-2.5 fw-semibold text-uppercase tracking-wider rounded-3 mb-4 shadow-sm"
+                    @onclick="OnCreateAccountClick">
+                    @SharedResource.CreateAccountButtonText
+                </button>
+
+                <div class="text-center">
+                    <span class="text-muted small">@SharedResource.AlreadyHaveAccount</span>
+                    <NavLink href="login" class="text-decoration-none small text-dark fw-bold border-bottom border-dark ms-1">@SharedResource.Login</NavLink>
+                </div>
+            </form>
+
+        </div>
+    </div>    
+}
+else
+{
+    <div class="position-absolute top-50 start-50 translate-middle text-center">
+        <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+}
+
+
+
+@code {
+    private UserSignupRequest Request { get; set; } = new();
+    private string? ErrorMsg { get; set; }
+    private bool IsBusy { get; set; }
+
+    private async Task OnCreateAccountClick()
+    {
+        IsBusy = true;
+
+        var response = await AuthService.SignupAsync(Request);
+        if (!response.IsSuccess)
+        {
+            IsBusy = false;
+            ErrorMsg = response.ErrorMessage;
+            return;
+        }
+
+        Nav.NavigateTo("/");
+        IsBusy = false;
+    }
+}

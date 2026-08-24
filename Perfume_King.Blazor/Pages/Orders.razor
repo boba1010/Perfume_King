@@ -1,0 +1,125 @@
+﻿@page "/orders"
+@using Shared.DTOs
+@using Shared.Services
+@inject IOrderService OrderService
+@inject NavigationManager Nav
+@inject IAuthService AuthService
+
+<PageTitle>Perfume King - My Orders</PageTitle>
+
+@if (!IsBusy)
+{
+    <div class="container my-4">
+        <div class="mb-4">
+            <h2 class="fw-bold">@SharedResource.MyOrders</h2>
+            <p class="text-muted">@SharedResource.TrackActiveRequests</p>
+        </div>
+
+        @if (UserOrders != null && UserOrders.Any())
+        {
+            <div class="d-flex flex-column gap-3">
+                @foreach (var order in UserOrders)
+                {
+                    <div class="card bg-white p-3">
+                        <div class="row g-3 align-items-center">
+
+                            <div class="col-12 col-sm-3 text-start">
+                                <span class="fw-bold d-block text-uppercase">Order #@order.OrderNumber</span>
+                                <small class="text-muted">Placed on @order.CreatedAt.ToString("dd MMM yyyy")</small>
+                            </div>
+
+                            <div class="col-12 col-sm-4 text-start">
+                                <span class="text-dark fw-medium d-block text-truncate">
+                                    @string.Join(", ", order.Items.Select(i => $"{i.Quantity}x {i.Name}"))
+                                </span>
+                                <small class="text-muted">Total: @order.TotalPrice.ToString("N0") EGP</small>
+                            </div>
+
+                            <div class="col-6 col-sm-2 text-start text-sm-center">
+                                <span class="badge py-2 px-3 rounded-pill w-100-sm @GetStatusBadgeClass(order.Status)">
+                                    @order.Status.ToString()
+                                </span>
+                            </div>
+
+                            <div class="col-6 col-sm-3 text-end">
+                                <button class="btn btn-outline-dark btn-sm px-3" @onclick="() => ViewOrderDetails(order.OrderNumber)">
+                                    View Details
+                                </button>
+                            </div>
+
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="card bg-white p-5 text-center my-4 border-0 shadow-sm">
+                <div class="mb-3 text-secondary">
+                    <i class="bi bi-box2 fs-1"></i>
+                </div>
+                <h4 class="fw-bold">@SharedResource.NoOrdersYet</h4>
+                <NavLink href="perfumes" class="btn btn-dark px-4 shadow-sm">@SharedResource.BrowsePerfumes</NavLink>
+            </div>
+        }
+    </div>    
+}
+else
+{
+    <div class="position-absolute top-50 start-50 translate-middle text-center">
+        <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+}
+
+
+@code {
+    private List<OrderRequestDTO> UserOrders { get; set; } = new();
+    private string? ErrorMsg { get; set; }
+    private bool IsBusy { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        IsBusy = true;
+
+        var authResponse = await AuthService.VerifyUserAsync();
+        UserStateManager.IsLoggedIn = authResponse.Data;
+
+        if (!UserStateManager.IsLoggedIn)
+        {
+            IsBusy = false;
+            Nav.NavigateTo("/login");
+            return;
+        }
+
+        var response = await OrderService.GetOrdersAsync();
+        if (!response.IsSuccess)
+        {
+            IsBusy = false;
+            ErrorMsg = response.ErrorMessage;
+            return;
+        }
+
+        UserOrders = response.Data;
+
+        IsBusy = false;
+    }
+
+    private string GetStatusBadgeClass(OrderStatus status)
+    {
+        return status switch
+        {
+            OrderStatus.Pending => "bg-warning text-dark",
+            OrderStatus.Processing => "bg-info text-white",
+            OrderStatus.Completed => "bg-success text-white",
+            OrderStatus.Cancelled => "bg-danger text-white",
+            _ => "bg-secondary text-white"
+        };
+    }
+
+    private void ViewOrderDetails(string orderNum)
+    {
+        Nav.NavigateTo($"/orderDetails?ordernumber={orderNum}");
+    }
+}

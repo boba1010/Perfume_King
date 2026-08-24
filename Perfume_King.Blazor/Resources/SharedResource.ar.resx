@@ -1,0 +1,348 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AlreadyHaveAccount" xml:space="preserve">
+    <value>لديك حساب بالفعل؟</value>
+  </data>
+  <data name="BrowseButtonText" xml:space="preserve">
+    <value>تصفح العطور</value>
+  </data>
+  <data name="CartEmptyDescription" xml:space="preserve">
+    <value>لا توجد منتجات في عربة التسوق الخاصة بك.</value>
+  </data>
+  <data name="CartIsEmpty" xml:space="preserve">
+    <value>عربة التسوق فارغة</value>
+  </data>
+  <data name="CartMultipleItems" xml:space="preserve">
+    <value>لديك {0} منتجات في عربة التسوق.</value>
+  </data>
+  <data name="CartSingleItem" xml:space="preserve">
+    <value>لديك منتج واحد في عربة التسوق.</value>
+  </data>
+  <data name="ContactUsLink" xml:space="preserve">
+    <value>اتصل بنا</value>
+  </data>
+  <data name="CreateAccountButtonText" xml:space="preserve">
+    <value>انشئ حساب جديد</value>
+  </data>
+  <data name="CreateAccountLink" xml:space="preserve">
+    <value>إنشاء حساب جديد</value>
+  </data>
+  <data name="CreateAccountText" xml:space="preserve">
+    <value>انشئ حساب</value>
+  </data>
+  <data name="CurrencySuffix" xml:space="preserve">
+    <value>جنيه</value>
+  </data>
+  <data name="EmailLabel" xml:space="preserve">
+    <value>البريد الإلكتروني</value>
+  </data>
+  <data name="EmailPlaceholder" xml:space="preserve">
+    <value>name@example.com</value>
+  </data>
+  <data name="ErrorGeneralTitle" xml:space="preserve">
+    <value>حدث خطأ ما</value>
+  </data>
+  <data name="ForgotPasswordLink" xml:space="preserve">
+    <value>نسيت كلمة المرور؟</value>
+  </data>
+  <data name="Free" xml:space="preserve">
+    <value>مجاني</value>
+  </data>
+  <data name="FullNameLabel" xml:space="preserve">
+    <value>الاسم كامل</value>
+  </data>
+  <data name="FullNamePlaceholder" xml:space="preserve">
+    <value>ادخل اسمك الكامل</value>
+  </data>
+  <data name="HeroSubtitle" xml:space="preserve">
+    <value>تصفح واطلب العطور المتاحة</value>
+  </data>
+  <data name="JoinToday" xml:space="preserve">
+    <value>Perfume King انضم اليوم الي</value>
+  </data>
+  <data name="Login" xml:space="preserve">
+    <value>تسجيل الدخول</value>
+  </data>
+  <data name="LoginButton" xml:space="preserve">
+    <value>تسجيل الدخول</value>
+  </data>
+  <data name="LoginDialogBody" xml:space="preserve">
+    <value>قم بتسجيل الدخول لتتمكن من الوصول إلى السلة وإضافة &lt;span class="text-warning fw-semibold"&gt;العطور&lt;/span&gt; إليها.</value>
+  </data>
+  <data name="LoginDialogTitle" xml:space="preserve">
+    <value>يرجى تسجيل الدخول</value>
+  </data>
+  <data name="LoginSubtitle" xml:space="preserve">
+    <value>قم بتسجيل الدخول إلى حساب Perfume King</value>
+  </data>
+  <data name="LoginTitle" xml:space="preserve">
+    <value>مرحباً بعودتك</value>
+  </data>
+  <data name="MostSoldPerfumesHeader" xml:space="preserve">
+    <value>تصفح العطور الأكثر مبيعاً</value>
+  </data>
+  <data name="NoAccountText" xml:space="preserve">
+    <value>ليس لديك حساب؟</value>
+  </data>
+  <data name="PasswordLabel" xml:space="preserve">
+    <value>كلمة المرور</value>
+  </data>
+  <data name="PasswordPlaceholder" xml:space="preserve">
+    <value>انشئ كلمة مرور</value>
+  </data>
+  <data name="ProceedCheckout" xml:space="preserve">
+    <value>المتابعة لإتمام الشراء</value>
+  </data>
+  <data name="Remove" xml:space="preserve">
+    <value>إزالة</value>
+  </data>
+  <data name="Shipping" xml:space="preserve">
+    <value>الشحن</value>
+  </data>
+  <data name="ShoppingCart" xml:space="preserve">
+    <value>عربة التسوق</value>
+  </data>
+  <data name="SubTotal" xml:space="preserve">
+    <value>المجموع</value>
+  </data>
+  <data name="SuccessSaveTitle" xml:space="preserve">
+    <value>تم حفظ العطر بنجاح</value>
+  </data>
+  <data name="Summary" xml:space="preserve">
+    <value>الملخص</value>
+  </data>
+  <data name="Total" xml:space="preserve">
+    <value>الإجمالي</value>
+  </data>
+  <data name="EmptyCartSuggestion" xml:space="preserve">
+    <value>أضف بعض العطور من صفحة المجموعات للبدء.</value>
+  </data>
+  <data name="BrowsePerfumes" xml:space="preserve">
+    <value>تصفح العطور</value>
+  </data>
+  <data name="Location" xml:space="preserve">
+    <value>الموقع</value>
+  </data>
+  <data name="Profile" xml:space="preserve">
+    <value>الملف الشخصي</value>
+  </data>
+  <data name="Orders" xml:space="preserve">
+    <value>الطلبات</value>
+  </data>
+  <data name="Logout" xml:space="preserve">
+    <value>سجل خروج</value>
+  </data>
+  <data name="SearchFragrancesPlaceholder" xml:space="preserve">
+    <value>ابحث عن العطور...</value>
+  </data>
+  <data name="City" xml:space="preserve">
+    <value>المدينة</value>
+  </data>
+  <data name="Governorate" xml:space="preserve">
+    <value>المحافظة</value>
+  </data>
+  <data name="DeliveryAddress" xml:space="preserve">
+    <value>عنوان التوصيل</value>
+  </data>
+  <data name="PhoneNumber" xml:space="preserve">
+    <value>رقم الهاتف</value>
+  </data>
+  <data name="MyOrders" xml:space="preserve">
+    <value>طلباتي</value>
+  </data>
+  <data name="OrderHash" xml:space="preserve">
+    <value>{0} رقم الطلب</value>
+  </data>
+  <data name="NoOrdersYet" xml:space="preserve">
+    <value>لم تقم بإجراء أي طلبات بعد.</value>
+  </data>
+  <data name="ItemsLabel" xml:space="preserve">
+    <value>العطور: </value>
+  </data>
+  <data name="GoBack" xml:space="preserve">
+    <value>ارجع</value>
+  </data>
+  <data name="BrowseCollectionLabel" xml:space="preserve">
+    <value>تصفح مجموعتنا الكاملة من العطور.</value>
+  </data>
+  <data name="AllPerfumesLabel" xml:space="preserve">
+    <value>كل العطور</value>
+  </data>
+  <data name="NoPerfumesAvailable" xml:space="preserve">
+    <value>لا يوجد اي عطور</value>
+  </data>
+  <data name="TrackActiveRequests" xml:space="preserve">
+    <value>تتبع طلباتك النشطة واطلع على سجل طلباتك.</value>
+  </data>
+  <data name="LayoutDirection" xml:space="preserve">
+    <value>rtl</value>
+  </data>
+  <data name="OrderNotFound" xml:space="preserve">
+    <value>الطلب رقم {0} غير موجود.</value>
+  </data>
+  <data name="PerfumeNameLabel" xml:space="preserve">
+    <value>الاسم العطر</value>
+  </data>
+  <data name="PriceLabel" xml:space="preserve">
+    <value>السعر</value>
+  </data>
+  <data name="QuantityLabel" xml:space="preserve">
+    <value>الكمية</value>
+  </data>
+  <data name="NameLabel" xml:space="preserve">
+    <value>الاسم</value>
+  </data>
+  <data name="CustomerInfoLabel" xml:space="preserve">
+    <value>معلومات العميل</value>
+  </data>
+  <data name="OrderDetailsLabel" xml:space="preserve">
+    <value>تفاصيل الطلب</value>
+  </data>
+  <data name="OrderNumberLabel" xml:space="preserve">
+    <value>رقم الطلب</value>
+  </data>
+  <data name="PlacedLabel" xml:space="preserve">
+    <value>تاريخ الطلب</value>
+  </data>
+  <data name="CheckoutTitle" xml:space="preserve">
+    <value>اكمال الطلب</value>
+  </data>
+  <data name="CheckoutSubtitle" xml:space="preserve">
+    <value>راجع عناصرك وأكد طلبك.</value>
+  </data>
+  <data name="DeliveryInformationHeader" xml:space="preserve">
+    <value>معلومات التوصيل</value>
+  </data>
+  <data name="UseProfileInfoLabel" xml:space="preserve">
+    <value>استخدام معلومات ملفك الشخصي المحفوظة</value>
+  </data>
+  <data name="PaymentCodLabel" xml:space="preserve">
+    <value>الدفع عند الاستلام</value>
+  </data>
+  <data name="PaymentCodDescription" xml:space="preserve">
+    <value>ادفع نقداً فور استلام طلبك.</value>
+  </data>
+  <data name="OrderSummaryLabel" xml:space="preserve">
+    <value>ملخص الطلب</value>
+  </data>
+  <data name="ConfirmRequestBtn" xml:space="preserve">
+    <value>تاكيد الطلب</value>
+  </data>
+</root>
